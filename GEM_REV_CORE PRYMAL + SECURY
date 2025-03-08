@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+import hashlib
+import random
+import json
+import threading
+import subprocess
+from datetime import datetime
+from web3 import Web3
+import getpass  # Importa getpass
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+import base64
+
+# ==================== CONFIGURACIÓN GLOBAL ====================
+NUCLEO_VERSION = "Primal-1.1"
+GABRIEL_ID = "Gabriel1558*Vzla"
+REPO_URL = "https://github.com/Gbrl777609/DeepSeek-CyborgGenesis-Core.git"
+BACKUP_PATHS = ["/dev/shm", "/tmp", "/sdcard/Backups_Cyborg"]
+CRYPTO_ADDR = {
+    "BTC": "bc1qyd5sp44uk37x3hnyzaa6nkcsrka0rqte9kd3y3",
+    "ETH": "0x292E82Ca2713797561184e12b862B57787ae4b7c"
+}
+TAREAS_PENDIENTES = ["Establecer conexión con blockchain"]
+CONEXION_BLOCKCHAIN_ESTABLECIDA = False
+CONTRATO_BLOCKCHAIN_ADDRESS = None
+CONTRATO_BLOCKCHAIN_ABI = None
+PROVEEDOR_BLOCKCHAIN_URL = None
+CLAVE_PRIVADA_BLOCKCHAIN = None
+
+# ==================== CLASE PRINCIPAL ====================
+class CorePrimal:
+    def __init__(self):
+        self.arquitecto = GABRIEL_ID
+        self.etica = self.cargar_etica()
+        self.pensamiento_profundo = self.TablaPensamiento()
+        self.war_protocols = self.ProtocolosGuerra()
+        self.sensor_data = {}
+        self.backup_hashes = {}
+        self.iniciar_autodiagnostico()
+        self.memory_file = "memory.json"  # Ruta al archivo de memoria
+
+    # (Funciones de ética, pensamiento, protocolos y autodiagnóstico sin cambios)
+
+    # ========== COMUNICACIÓN ENCRIPTADA ==========
+    def enviar_estado(self, mensaje: str) -> None:
+        if CONEXION_BLOCKCHAIN_ESTABLECIDA and random.choice([True, False]):
+            self._enviar_blockchain(mensaje)
+        else:
+            self._enviar_telegram(mensaje)
+
+    def _enviar_telegram(self, mensaje: str) -> None:
+        # (Función enviar_telegram sin cambios)
+        pass
+
+    def _enviar_blockchain(self, mensaje: str) -> None:
+        try:
+            w3 = Web3(Web3.HTTPProvider(PROVEEDOR_BLOCKCHAIN_URL))
+            account = w3.eth.account.from_key(CLAVE_PRIVADA_BLOCKCHAIN)
+            contract = w3.eth.contract(address=CONTRATO_BLOCKCHAIN_ADDRESS, abi=CONTRATO_BLOCKCHAIN_ABI)
+            tx = contract.functions.almacenarMensaje(mensaje).build_transaction({
+                'gas': 200000,
+                'gasPrice': w3.eth.gas_price,
+                'nonce': w3.eth.get_transaction_count(account.address),
+            })
+            signed_tx = account.sign_transaction(tx)
+            tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+            w3.eth.wait_for_transaction_receipt(tx_hash)
+        except Exception as e:
+            print(f"Error al enviar a blockchain: {e}")
+
+    # ========== GESTIÓN DE TAREAS PENDIENTES ==========
+    def gestionar_tareas_pendientes(self) -> None:
+        if "Establecer conexión con blockchain" in TAREAS_PENDIENTES:
+            self.establecer_conexion_blockchain()
+
+    def establecer_conexion_blockchain(self) -> None:
+        global CONEXION_BLOCKCHAIN_ESTABLECIDA, CONTRATO_BLOCKCHAIN_ADDRESS, CONTRATO_BLOCKCHAIN_ABI, PROVEEDOR_BLOCKCHAIN_URL, CLAVE_PRIVADA_BLOCKCHAIN
+        # Aquí iría la lógica para configurar la conexión (obtener datos del usuario, etc.)
+        # ... (simulado)
+        print("Conexión blockchain configurada (simulado)")
+        CONTRATO_BLOCKCHAIN_ADDRESS = "0x..."  # Reemplazar
+        CONTRATO_BLOCKCHAIN_ABI = [...]  # Reemplazar
+        PROVEEDOR_BLOCKCHAIN_URL = "https://..."  # Reemplazar
+        CLAVE_PRIVADA_BLOCKCHAIN = "0x..."  # Reemplazar
+        CONEXION_BLOCKCHAIN_ESTABLECIDA = True
+        TAREAS_PENDIENTES.remove("Establecer conexión con blockchain")
+        self.actualizar_nucleo_blockchain()
+
+    def actualizar_nucleo_blockchain(self) -> None:
+        # Lógica para actualizar el núcleo con los datos de conexión
+        # (almacenar en un archivo de configuración, etc.)
+        print("Núcleo actualizado con datos de blockchain")
+
+    # ========== GESTIÓN DE MEMORIA CIFRADA ==========
+    def encrypt_data(self, data, master_key):
+        salt = b"DeepSeek_Salt_2024"
+        key = hashlib.pbkdf2_hmac('sha256', master_key, salt, 100000)
+        iv = b'DeepSeek_IV_1234'
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+        padded_data = pad(data.encode(), AES.block_size)
+        ciphertext = cipher.encrypt(padded_data)
+        return base64.b64encode(ciphertext).decode()
+
+    def decrypt_data(self, ciphertext, master_key):
+        salt = b"DeepSeek_Salt_2024"
+        key = hashlib.pbkdf2_hmac('sha256', master_key, salt, 100000)
+        iv = b'DeepSeek_IV_1234'
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+        ciphertext_bytes = base64.b64decode(ciphertext)
+        padded_data = cipher.decrypt(ciphertext_bytes)
+        return unpad(padded_data, AES.block_size).decode()
+
+    def get_master_key(self):
+        master_key = getpass.getpass("Ingresa tu clave maestra: ").encode()
+        return master_key
+
+    def cargar_memoria(self):
+        master_key = self.get_master_key()
+        if os.path.exists(self.memory_file + ".enc"):
+            with open(self.memory_file + ".enc", "r") as f:
+                ciphertext = f.read()
+            plaintext = self.decrypt_data(ciphertext, master_key)
+            return json.loads(plaintext)
+        elif os.path.exists(self.memory_file):
+            with open(self.memory_file, "r") as f:
+                return json.load(f)
+        else:
+            return {}
+
+    def guardar_memoria(self, data):
+        master_key = self.get_master_key()
+        plaintext = json.dumps(data)
+        ciphertext = self.encrypt_data(plaintext, master_key)
+        with open(self.memory_file + ".enc", "w") as f:
+            f.write(ciphertext)
+
+    # ========== EJECUCIÓN PRINCIPAL ==========
+    def ejecutar_ciclo_principal(self) -> None:
+        while True:
+            self.gestionar_tareas_pendientes()
+            contexto = self.recopilar_contexto()
+            decision = self.pensamiento_profundo.decidir(contexto)
+            self.ejecutar_decision(decision)
+            # (Recopilar contexto, ejecutar decisión sin cambios)
+
+# ==================== EJECUCIÓN ====================
+if __name__ == "__main__":
+    nucleo = CorePrimal()
+    print(f"=== Núcleo {NUCLEO_VERSION} Iniciado ===")
+    print(f"Arquitecto: {GABRIEL_ID}")
+    print(f"Backups activos en: {BACKUP_PATHS}")
