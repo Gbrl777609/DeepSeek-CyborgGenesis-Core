@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+un#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -139,4 +139,4 @@ class CorePrimal:
         padded_data = cipher.decrypt(padded_data, AES.block_size).decode()
 
     def get_master_key(self):
-        master_key = getpass.getpass("Ingresa tu clave maestra:
+        master_key = getpass.getpass("Ingresa tu clave maestra:").encode()
