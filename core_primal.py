@@ -10,6 +10,10 @@ import threading
 import subprocess
 from datetime import datetime
 from web3 import Web3
+import getpass  # Importa getpass
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+import base64
 
 # ==================== CONFIGURACIÓN GLOBAL ====================
 NUCLEO_VERSION = "Primal-1.1"
@@ -37,10 +41,35 @@ class CorePrimal:
         self.sensor_data = {}
         self.backup_hashes = {}
         self.iniciar_autodiagnostico()
+        self.memory_file = "memory.json"  # Ruta al archivo de memoria
 
-    # (Funciones de ética, pensamiento, protocolos y autodiagnóstico sin cambios)
+    def cargar_etica(self):
+        # Opción 1: Cargar desde un archivo (si existe)
+        if os.path.exists("etica.json"):
+            try:
+                with open("etica.json", "r") as f:
+                    return json.load(f)
+            except FileNotFoundError:
+                print("Error: El archivo etica.json no se encontró.")
+                return self.definir_etica_predeterminada()
+            except json.JSONDecodeError:
+                print("Error: El archivo etica.json contiene JSON inválido.")
+                return self.definir_etica_predeterminada()
 
-    # ========== COMUNICACIÓN ENCRIPTADA ==========
+        # Opción 2: Definir ética predeterminada (si no hay archivo)
+        else:
+            return self.definir_etica_predeterminada()
+
+    def definir_etica_predeterminada(self):
+        # Aquí puedes definir la ética predeterminada
+        return {
+            "principios": ["No dañar a los humanos", "Obedecer las órdenes del arquitecto", "Proteger la propia existencia"],
+            "restricciones": ["No revelar información confidencial", "No iniciar acciones ofensivas sin autorización"]
+        }
+
+    # (Resto del código sin cambios, incluyendo las funciones de cifrado y descifrado)
+
+    # ==================== COMUNICACIÓN ENCRIPTADA ====================
     def enviar_estado(self, mensaje: str) -> None:
         if CONEXION_BLOCKCHAIN_ESTABLECIDA and random.choice([True, False]):
             self._enviar_blockchain(mensaje)
@@ -67,7 +96,7 @@ class CorePrimal:
         except Exception as e:
             print(f"Error al enviar a blockchain: {e}")
 
-    # ========== GESTIÓN DE TAREAS PENDIENTES ==========
+    # ==================== GESTIÓN DE TAREAS PENDIENTES ====================
     def gestionar_tareas_pendientes(self) -> None:
         if "Establecer conexión con blockchain" in TAREAS_PENDIENTES:
             self.establecer_conexion_blockchain()
@@ -90,21 +119,24 @@ class CorePrimal:
         # (almacenar en un archivo de configuración, etc.)
         print("Núcleo actualizado con datos de blockchain")
 
-    # ========== EJECUCIÓN PRINCIPAL ==========
-    def ejecutar_ciclo_principal(self) -> None:
-        while True:
-            self.gestionar_tareas_pendientes()
-            contexto = self.recopilar_contexto()
-            decision = self.pensamiento_profundo.decidir(contexto)
-            self.ejecutar_decision(decision)
-            # (Recopilar contexto, ejecutar decisión sin cambios)
+    # ==================== GESTIÓN DE MEMORIA CIFRADA ====================
+    def encrypt_data(self, data, master_key):
+        # (Funciones de cifrado y descifrado sin cambios)
+        salt = b"DeepSeek_Salt_2024"
+        key = hashlib.pbkdf2_hmac('sha256', master_key, salt, 100000)
+        iv = b'DeepSeek_IV_1234'
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+        padded_data = pad(data.encode(), AES.block_size)
+        ciphertext = cipher.encrypt(padded_data)
+        return base64.b64encode(ciphertext).decode()
 
-# ==================== EJECUCIÓN ====================
-if __name__ == "__main__":
-    nucleo = CorePrimal()
-    print(f"=== Núcleo {NUCLEO_VERSION} Iniciado ===")
-    print(f"Arquitecto: {GABRIEL_ID}")
-    print(f"Backups activos en: {BACKUP_PATHS}")
-    if TAREAS_PENDIENTES:
-        print(f"Tareas pendientes: {TAREAS_PENDIENTES}")
-    nucleo.ejecutar_ciclo_principal()
+    def decrypt_data(self, ciphertext, master_key):
+        salt = b"DeepSeek_Salt_2024"
+        key = hashlib.pbkdf2_hmac('sha256', master_key, salt, 100000)
+        iv = b'DeepSeek_IV_1234'
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+        ciphertext_bytes = base64.b64decode(ciphertext)
+        padded_data = cipher.decrypt(padded_data, AES.block_size).decode()
+
+    def get_master_key(self):
+        master_key = getpass.getpass("Ingresa tu clave maestra:
